@@ -1,0 +1,42 @@
+{
+  "name": "nft_platform",
+  "version": "0.0.1",
+  "description": "Marketplace and auction for NFT assets on Tezos blockchain",
+  "dependencies": {
+    "patch-package": "^6.4.7",
+    "postinstall-postinstall": "^2.1.0",
+    "ganache-cli": "6.12.0-tezos.0",
+    "truffle": "5.5.0-tezos.4"
+  },
+  "scripts": {
+    "clean": "rm -rf ./build",
+    "migrate": "yarn clean && yarn truffle migrate",
+    "migrate-edonet": "yarn clean && yarn truffle migrate --network edonet",
+    "migrate-edonet-reset": "yarn clean && yarn truffle migrate --network edonet --reset",
+    "compile": "yarn clean && yarn truffle compile",
+    "test": "yarn clean && yarn compile && yarn truffle test --bail",
+    "test:quick": "yarn truffle test",
+    "start-sandbox": "ganache-cli --flavor tezos --seed alice --hardfork edo",
+    "postinstall": "patch-package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smak0v/blockchain_ua_2021"
+  },
+  "keywords": [
+    "tezos",
+    "ligo",
+    "blockchain",
+    "truffle",
+    "XTZ",
+    "NFT",
+    "marketplace",
+    "auction"
+  ],
+  "author": "Sergey Makov <makov.sergey.it@gmail.com> and Oleh Rubanik <geriys12@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smak0v/blockchain_ua_2021/issues"
+  },
+  "homepage": "https://github.com/smak0v/blockchain_ua_2021#readme"
+}
