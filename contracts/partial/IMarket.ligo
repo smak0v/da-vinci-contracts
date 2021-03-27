@@ -6,7 +6,6 @@ type storage is [@layout:comb] record [
   tokenFa2      : address;
   admin         : address;
   userData      : userMap;
-  tokenCounter  : nat;
 ]
 
 type ownerTokenParams is [@layout:comb] record [
@@ -41,4 +40,4 @@ type entryAction is
   | ExhibitToken of changePriceParams
   | Buy of ownerTokenParams
   | Delete of nat
-  | ChangePrice of nat
+  | ChangePrice of changePriceParams
