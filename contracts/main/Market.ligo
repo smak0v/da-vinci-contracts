@@ -3,13 +3,13 @@
 [@inline] function getMap (const tokenAddress : address; const s : storage) : map(nat, tez) is
   case s.userData[tokenAddress] of
     Some (v) -> v
-    | None -> (failwith ("This map not found") : map(nat, tez))
+    | None -> (map [] : map(nat, tez))
   end;
 
 [@inline] function getPrice (const tokenId : nat; const tokenData : map(nat, tez)) : tez is
   case tokenData[tokenId] of
     Some (v) -> v
-    | None -> (failwith ("This tokenId not found") : tez)
+    | None -> 0tez
   end;
 
 [@inline] function getTokenTransferEntrypoint (const tokenAddress : address) : contract(transferType) is
@@ -28,6 +28,10 @@ function setMarketAdmin (const newAdmin : address; var s : storage) : return is
 
 function exhibitToken (const tokenId : nat; const price : tez; var s : storage) : return is
   block {
+    if price = 0tez then
+      failwith("exhibitPrice is zero")
+    else skip;
+
     s.userData[Tezos.sender] := Map.add(tokenId, price, getMap(Tezos.sender,s));
 
     const transferDestination : transfer_destination = record [
@@ -62,6 +66,10 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
       txs = list [transferDestination];
     ];
 
+    if userPrice = 0tez then
+      failwith("Price is zero")
+    else skip;
+
     if Tezos.amount =/= userPrice then
       failwith("Not enough XTZ")
     else skip;
@@ -87,7 +95,7 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
 
 function delete (const tokenId : nat; var s : storage) : return is
   block {
-    s.userData[Tezos.sender] := Map.remove(tokenId, getMap(Tezos.sender,s) );
+    s.userData[Tezos.sender] := Map.remove(tokenId, getMap(Tezos.sender,s));
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.sender;
