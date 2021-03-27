@@ -1,10 +1,10 @@
+const Market = artifacts.require("Market");
+
 const { TezosToolkit } = require("@taquito/taquito");
 const { InMemorySigner } = require("@taquito/signer");
 const { MichelsonMap } = require("@taquito/michelson-encoder");
 
 const { oleh } = require("../scripts/sandbox/accounts");
-
-const Market = artifacts.require("Market");
 
 module.exports = async (deployer, _network, accounts) => {
   tezos = new TezosToolkit(tezos.rpc.url);
@@ -16,7 +16,7 @@ module.exports = async (deployer, _network, accounts) => {
   });
 
   const storage = {
-    tokenFa2: "KT1KCuCQqzvF2wiiXgT3qktZfyVjTeXRXx6B",
+    tokenFa2: "KT1Wa7xVQHGVqMCfoRHqG7UCTxwgEpXQ2qci",
     admin: oleh.pkh,
     userData: new MichelsonMap(),
   };

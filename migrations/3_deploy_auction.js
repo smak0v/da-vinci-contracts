@@ -21,7 +21,7 @@ module.exports = async (deployer, _network, accounts) => {
     auctionsByUser: new MichelsonMap(),
     tokensByUser: new MichelsonMap(),
     admin: oleh.pkh,
-    token: "KT1KCuCQqzvF2wiiXgT3qktZfyVjTeXRXx6B",
+    token: "KT1Wa7xVQHGVqMCfoRHqG7UCTxwgEpXQ2qci",
     lastAuctionId: "0",
     minAuctionLifetime: "3600", // 1 hour
     maxExtensionTime: "21600", // 6 hours
