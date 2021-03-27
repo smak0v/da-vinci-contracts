@@ -101,6 +101,15 @@ block {
   const accomulated_response : list(balance_of_response) = List.fold(look_up_balance, balance_params.requests, (nil: list(balance_of_response)));
 } with list [transaction(accomulated_response, 0tz, balance_params.callback)]
 
+function add_new_token(const data : map(string, bytes); var s : storage) : return is
+block {
+  s.token_metadata[s.lastTokenId] := record [
+    token_id = s.lastTokenId;
+    extras = data;
+  ];
+  s.lastTokenId := s.lastTokenId + 1n;
+} with (noOperations, s)
+
 function main(const action : token_action; var s : storage) : return is
 block {
   skip;
@@ -108,6 +117,7 @@ block {
   | Transfer(params) -> ((nil : list(operation)), List.fold(iterate_transfer, params, s))
   | Balance_of(params) -> (get_balance_of(params, s), s)
   | Update_operators(params) -> ((nil : list(operation)), List.fold(iterate_update_operator, params, s))
+  | Add_new_token(params) -> add_new_token(params, s)
 end;
 
 

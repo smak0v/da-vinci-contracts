@@ -1,4 +1,4 @@
-const { alice } = require("./scripts/sandbox/accounts");
+const { alice, oleh } = require("./scripts/sandbox/accounts");
 
 module.exports = {
   contracts_directory: "./contracts/main",
@@ -21,7 +21,7 @@ module.exports = {
       host: "https://testnet-tezos.giganode.io",
       port: 443,
       network_id: "*",
-      secretKey: alice.sk,
+      secretKey: oleh.sk,
       type: "tezos",
     },
     mainnet: {

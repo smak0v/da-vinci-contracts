@@ -41,4 +41,4 @@ type entryAction is
   | ExhibitToken of changePriceParams
   | Buy of ownerTokenParams
   | Delete of nat
-  | ChangePrice of nat
+  | ChangePrice of changePriceParams

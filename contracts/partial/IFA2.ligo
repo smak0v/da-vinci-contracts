@@ -21,6 +21,7 @@ type storage is record [
 ]
 
 type return is list (operation) * storage
+[@inline] const noOperations : list (operation) = nil;
 
 type transfer_destination is [@layout:comb] record [
   to_ : address;
@@ -68,3 +69,4 @@ type token_action is
 | Transfer of transfer_params
 | Balance_of of balance_params
 | Update_operators of update_operator_params
+| Add_new_token of map(string, bytes)

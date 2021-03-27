@@ -9,4 +9,8 @@ module.exports = {
     sk: "edsk3RFfvaFaxbHx8BMtEW1rKQcPtDML3LXjNqMNLCzC3wLC1bWbAt",
     pk: "edpkurPsQ8eUApnLUJ9ZPDvu98E8VNj4KtJa1aZr16Cr5ow5VHKnz4",
   },
+  oleh: {
+    pkh: "tz1dKqzBVeZBDUx5UvTJyjuKckLjdNLjfdBY",
+    sk: "edskS5eUUqh9ZG45iJwpKK224ii3gvffumZsyAsWWAYGYLCSRDtnMGtnuoCT2DPWNu5kX31VyoMHBhYAj2EG9AnYCb5xjqF7PD",
+  }
 };

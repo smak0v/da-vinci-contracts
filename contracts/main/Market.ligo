@@ -1,16 +1,16 @@
 #include "../partial/IMarket.ligo"
 
-[@inline] function getMap (const tokenAddress : address; const tokenData : userMap) : map(nat, tez) is
-  case tokenData[tokenAddress] of
+[@inline] function getMap (const tokenAddress : address; const s : storage) : map(nat, tez) is
+  case s.userData[tokenAddress] of
     Some (v) -> v
-    | None -> failwith ("This map not found")
-  end
+    | None -> (failwith ("This map not found") : map(nat, tez))
+  end;
 
 [@inline] function getPrice (const tokenId : nat; const tokenData : map(nat, tez)) : tez is
   case tokenData[tokenId] of
     Some (v) -> v
-    | None -> failwith ("This tokenId not found")
-  end
+    | None -> (failwith ("This tokenId not found") : tez)
+  end;
 
 [@inline] function getTokenTransferEntrypoint (const tokenAddress : address) : contract(transferType) is 
   case (Tezos.get_entrypoint_opt("%transfer", tokenAddress) : option(contract(transferType))) of 
@@ -28,7 +28,7 @@ function setMarketAdmin (const newAdmin : address; var s : storage) : return is
 
 function exhibitToken (const tokenId : nat; const price : tez; var s : storage) : return is 
   block {
-    s.userData[Tezos.sender] := Map.add(tokenId, price, s.userData[Tezos.sender]);
+    s.userData[Tezos.sender] := Map.add(tokenId, price, getMap(Tezos.sender,s));
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.self_address;
@@ -39,18 +39,18 @@ function exhibitToken (const tokenId : nat; const price : tez; var s : storage) 
       from_ = Tezos.sender;
       txs = list [transferDestination];
     ];
-    const operations = Tezos.transaction(
+    const operations : list(operation) = list [Tezos.transaction(
       TransferType(list[transferParam]),
       0mutez,
       getTokenTransferEntrypoint(s.tokenFa2)
-    );
+    )];
   } with (operations, s)
 
 function buy (const ownerAddress : address; const tokenId : nat; var s : storage) : return is 
   block {
-    var userMap : map(nat, tez) := getMap(ownerAddress);
-    var userPrice : tez := getPrice(userMap);
-    s.userData[ownerAddress] := Map.remove(tokenId, s.userData[ownerAddress]);
+    var userMaps : map(nat, tez) := getMap(ownerAddress, s);
+    var userPrice : tez := getPrice(tokenId, userMaps); 
+    s.userData[ownerAddress] := Map.remove(tokenId, getMap(ownerAddress,s) );
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.sender;
@@ -73,7 +73,7 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
 
     const operations : list(operation) = list[
       Tezos.transaction(
-        Tezos.sender, 
+        unit, 
         userPrice,
         receiver
       );
@@ -87,7 +87,7 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
 
 function delete (const tokenId : nat; var s : storage) : return is
   block {
-    s.userData[Tezos.sender] := Map.remove(tokenId, s.userData[Tezos.sender]);
+    s.userData[Tezos.sender] := Map.remove(tokenId, getMap(Tezos.sender,s) );
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.sender;
@@ -98,30 +98,32 @@ function delete (const tokenId : nat; var s : storage) : return is
       from_ = Tezos.self_address;
       txs = list [transferDestination];
     ];
-    const operations = Tezos.transaction(
-      TransferType(list[transferParam]),
-      0mutez,
-      getTokenTransferEntrypoint(s.tokenFa2)
-    );
+    const operations : list(operation) = list[
+      Tezos.transaction(
+        TransferType(list[transferParam]),
+        0mutez,
+        getTokenTransferEntrypoint(s.tokenFa2)
+    )];
   } with (operations, s)
 
-function changePrice (const tokenId : nat; const price : nat; var s : storage) : return is 
+function changePrice (const tokenId : nat; const price : tez; var s : storage) : return is 
   block {
-    var userMap : map(nat, tez) := getMap(ownerAddress);
-    var userPrice : tez := getPrice(userMap);
+    var userMaps : map(nat, tez) := getMap(Tezos.sender, s);
+    var userPrice : tez := getPrice(tokenId, userMaps);
+    
     if userPrice > 0tez then
-      s.userData[Tezos.sender] := Map.update(tokenId, price, s.userData[Tezos.sender]);
+      s.userData[Tezos.sender] := Map.update(tokenId, Some(price), getMap(Tezos.sender, s));
     else skip;
 
   } with (noOperations, s)
 
-function main(const action : entryAction; var s : storage) : return is
+function main (const action : entryAction; var s : storage) : return is
   block {
   skip
   } with case action of
   | SetMarketAdmin(params) -> setMarketAdmin(params, s)
-  | ExhibitToken(params) -> exhibitToken(params, s)
-  | Buy(params) -> buy(params, s)
+  | ExhibitToken(params) -> exhibitToken(params.tokenId, params.price, s)
+  | Buy(params) -> buy(params.ownerAddress, params.tokenId, s)
   | Delete(params) -> delete(params, s)
-  | ChangePrice(params) -> changePrice(params, s)
+  | ChangePrice(params) -> changePrice(params.tokenId, params.price, s)
   end;
