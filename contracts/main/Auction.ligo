@@ -6,11 +6,11 @@ function getTokenTransferEntrypoint(const token : address) : contract(transfer_t
   | None -> (failwith("getTokenTransferEntrypoint not found") : contract(transfer_type))
   end;
 
-function getAuctionsByUser(const user : address; const s : storage) : list(auctions_params) is
+function getAuctionsByUser(const user : address; const s : storage) : list(auction_params) is
   block {
-    const auctionsByUser : list(auctions_params) = case s.auctionsByUser[user] of
+    const auctionsByUser : list(auction_params) = case s.auctionsByUser[user] of
     | Some(lst) -> lst
-    | None -> (list [] : list(auctions_params))
+    | None -> (list [] : list(auction_params))
     end;
   } with auctionsByUser
 
@@ -40,22 +40,61 @@ function getTokenTransferOperation(const token : address; const tokenId : nat) :
     );
   } with op
 
-function submitForAuction(const token_params : submit_token_params; var s : storage) : return is
+function checkIfTokenIsOnAuction(const tokenParams : token_params; const s : storage) : bool is
+  case s.auctionByToken[tokenParams] of
+  | Some(v) -> True
+  | None -> False
+  end;
+
+function validateSubmition(const params : submit_token_params; var s : storage) : unit is
   block {
-    const operations : list(operation) = list [getTokenTransferOperation(token_params.token, token_params.tokenId)];
+    if params.lifetime < s.minAuctionLifetime then
+      failwith("Too small lifetime")
+    else
+      skip;
+
+    if params.extensionTime > s.maxExtensionTime then
+      failwith("Too high extension time")
+    else
+      skip;
+
+    if checkIfTokenIsOnAuction(params.tokenParams, s) then
+      failwith("Token already is on auction")
+    else
+      skip;
+  } with unit
+
+function validateBid(const bidParams : make_bid_params; var s : storage) : unit is
+  block {
+    if not checkIfTokenIsOnAuction(bidParams.tokenParams, s) then
+      failwith("Token is not on auction")
+    else
+      skip;
+
+    if
+  } with unit
+
+function submitForAuction(const params : submit_token_params; var s : storage) : return is
+  block {
+    validateSubmition(params, s);
+
+    const operations : list(operation) = list [getTokenTransferOperation(
+      params.tokenParams.token,
+      params.tokenParams.tokenId
+    )];
     const bid : bid_params = record [
       user = Tezos.sender;
-      bid = token_params.initialPrice;
+      bid = params.initialPrice;
       createdAt = Tezos.now;
     ];
-    const auction : auctions_params = record [
-      token_params = token_params;
+    const auction : auction_params = record [
+      tokenParams = params;
       bids = list [bid];
       createdAt = Tezos.now;
     ];
     const token : token_params = record [
-      token = token_params.token;
-      tokenId = token_params.tokenId;
+      token = params.tokenParams.token;
+      tokenId = params.tokenParams.tokenId;
     ];
     var auctionsByUser := getAuctionsByUser(Tezos.sender, s);
     var tokensByUser := getTokensByUser(Tezos.sender, s);
@@ -67,7 +106,37 @@ function submitForAuction(const token_params : submit_token_params; var s : stor
     s.tokensByUser[Tezos.sender] := tokensByUser;
   } with (operations, s)
 
+function makeBid(const bidParams : make_bid_params; var s : storage) : return is
+  block {
+    validateBid(bidParams, s);
+
+  } with (noOperations, s)
+
+function claimToken(var s : storage) : return is
+  block {
+    skip;
+  } with (noOperations, s)
+
+function claimCoins(var s : storage) : return is
+  block {
+    skip;
+  } with (noOperations, s)
+
+function setAdmin(const admin : address; var s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("Not admin");
+    else
+      skip;
+
+    s.admin := admin;
+  } with (noOperations, s)
+
 function main(const action : actions; const s : storage) : return is
   case action of
   | SubmitForAuction(v) -> submitForAuction(v, s)
+  | MakeBid(v) -> makeBid(v, s)
+  | ClaimToken(v) -> claimToken(s)
+  | ClaimCoins(v) -> claimCoins(s)
+  | SetAdmin(v) -> setAdmin(v, s)
   end

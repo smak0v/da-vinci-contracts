@@ -1,11 +1,20 @@
 // Auction types
-type submit_token_params is [@layout:comb] record [
+type token_params is [@layout:comb] record [
   token                   : address;
   tokenId                 : nat;
+]
+
+type submit_token_params is [@layout:comb] record [
+  tokenParams             : token_params;
   initialPrice            : nat;
   minBidStep              : nat;
   lifetime                : nat;
   extensionTime           : nat;
+]
+
+type make_bid_params is [@layout:comb] record [
+  tokenParams             : token_params;
+  bid                     : nat;
 ]
 
 type bid_params is [@layout:comb] record [
@@ -19,28 +28,31 @@ type previous_auctions_params is [@layout:comb] record [
   createdAt               : timestamp;
 ]
 
-type auctions_params is [@layout:comb] record [
-  token_params            : submit_token_params;
+type auction_params is [@layout:comb] record [
+  tokenParams             : submit_token_params;
   bids                    : list(bid_params);
   createdAt               : timestamp;
 ]
 
-type token_params is [@layout:comb] record [
-  token                   : address;
-  tokenId                 : nat;
-]
-
 type storage is [@layout:comb] record [
-  auctions                : list(auctions_params);
-  auctionsByUser          : big_map(address, list(auctions_params));
+  auctions                : list(auction_params);
+  auctionByToken          : big_map(token_params, auction_params);
+  auctionsByUser          : big_map(address, list(auction_params));
   tokensByUser            : big_map(address, list(token_params));
   previousAuctionsByToken : big_map(token_params, list(previous_auctions_params));
+  minAuctionLifetime      : nat;
+  maxExtensionTime        : nat;
+  admin                   : address;
 ]
 
 type return is list(operation) * storage
 
 type actions is
 | SubmitForAuction of submit_token_params
+| MakeBid of make_bid_params
+| ClaimToken of unit
+| ClaimCoins of unit
+| SetAdmin of address
 
 [@inline] const noOperations : list(operation) = nil;
 
