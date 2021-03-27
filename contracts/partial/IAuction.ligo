@@ -48,6 +48,8 @@ type actions is
 | ClaimToken of tokenId
 | ClaimCoins of tokenId
 | SetAdmin of address
+| SetMinAuctionLifetime of nat
+| SetMaxExtensionTime of nat
 
 [@inline] const noOperations : list(operation) = nil;
 

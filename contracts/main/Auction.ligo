@@ -228,6 +228,26 @@ function setAdmin(const admin : address; var s : storage) : return is
     s.admin := admin;
   } with (noOperations, s)
 
+function setMinAuctionLifetime(const newMinAuctionLifetime : nat; var s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("Not admin");
+    else
+      skip;
+
+    s.minAuctionLifetime := newMinAuctionLifetime;
+  } with (noOperations, s)
+
+function setMaxExtensionTime(const newMaxExtensionTime : nat; var s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("Not admin");
+    else
+      skip;
+
+    s.maxExtensionTime := newMaxExtensionTime;
+  } with (noOperations, s)
+
 function main(const action : actions; const s : storage) : return is
   case action of
   | SubmitForAuction(v) -> submitForAuction(v, s)
@@ -235,4 +255,6 @@ function main(const action : actions; const s : storage) : return is
   | ClaimToken(v) -> claimToken(v, s)
   | ClaimCoins(v) -> claimCoins(v, s)
   | SetAdmin(v) -> setAdmin(v, s)
+  | SetMinAuctionLifetime(v) -> setMinAuctionLifetime(v, s)
+  | SetMaxExtensionTime(v) -> setMaxExtensionTime(v, s)
   end
