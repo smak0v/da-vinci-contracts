@@ -86,10 +86,17 @@ function validateBid(const bidParams : make_bid_params; const auction : auction_
     else
       skip;
 
-    if bidParams.bid - auction.lastBid.bid < auction.tokenParams.minBidStep then
-      failwith("Bid should be greater than min bid step")
-    else
-      skip;
+    if auction.lastBid.bid <= 0tez then block {
+      if bidParams.bid - auction.tokenParams.initialPrice < auction.tokenParams.minBidStep then
+        failwith("Bid should be greater than initial price")
+      else
+        skip;
+    } else block {
+      if bidParams.bid - auction.lastBid.bid < auction.tokenParams.minBidStep then
+        failwith("Bid should be greater than min bid step")
+      else
+        skip;
+    }
   } with unit
 
 function submitForAuction(const params : submit_token_params; var s : storage) : return is
