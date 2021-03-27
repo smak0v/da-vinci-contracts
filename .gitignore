@@ -5,3 +5,7 @@ build
 package-lock.json
 yarn.lock
 .DS_Store
+
+.idea
+.DS_Store
+*.coverage
