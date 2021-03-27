@@ -3,9 +3,12 @@
   "version": "0.0.1",
   "description": "Marketplace and auction for NFT assets on Tezos blockchain",
   "dependencies": {
+    "@taquito/michelson-encoder": "^8.1.0",
+    "@taquito/signer": "^8.1.0",
+    "@taquito/taquito": "^8.1.0",
+    "ganache-cli": "6.12.0-tezos.0",
     "patch-package": "^6.4.7",
     "postinstall-postinstall": "^2.1.0",
-    "ganache-cli": "6.12.0-tezos.0",
     "truffle": "5.5.0-tezos.4"
   },
   "scripts": {
