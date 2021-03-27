@@ -31,8 +31,8 @@ type auction_params is [@layout:comb] record [
 type storage is [@layout:comb] record [
   auctions                : big_map(auctionId, auction_params);
   auctionByToken          : big_map(tokenId, auctionId);
-  auctionsByUser          : big_map(address, list(auctionId));
-  tokensByUser            : big_map(address, list(tokenId));
+  auctionsByUser          : big_map(address, set(auctionId));
+  tokensByUser            : big_map(address, set(tokenId));
   admin                   : address;
   token                   : address;
   lastAuctionId           : nat;

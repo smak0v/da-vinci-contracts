@@ -6,19 +6,19 @@ function getTokenTransferEntrypoint(const token : address) : contract(transfer_t
   | None -> (failwith("getTokenTransferEntrypoint not found") : contract(transfer_type))
   end;
 
-function getAuctionsByUser(const user : address; const s : storage) : list(auctionId) is
+function getAuctionsByUser(const user : address; const s : storage) : set(auctionId) is
   block {
-    const auctionsByUser : list(auctionId) = case s.auctionsByUser[user] of
-    | Some(lst) -> lst
-    | None -> (list [] : list(auctionId))
+    const auctionsByUser : set(auctionId) = case s.auctionsByUser[user] of
+    | Some(v) -> v
+    | None -> (set [] : set(auctionId))
     end;
   } with auctionsByUser
 
-function getTokensByUser(const user : address; const s : storage) : list(tokenId) is
+function getTokensByUser(const user : address; const s : storage) : set(tokenId) is
   block {
-    const tokensByUser : list(tokenId) = case s.tokensByUser[user] of
-    | Some(lst) -> lst
-    | None -> (list [] : list(tokenId))
+    const tokensByUser : set(tokenId) = case s.tokensByUser[user] of
+    | Some(v) -> v
+    | None -> (set [] : set(tokenId))
     end;
   } with tokensByUser
 
@@ -43,7 +43,7 @@ function getTokenTransferOperation(const token : address; const tokenId : tokenI
 function getAuctionIdByTokenId(const tokenId : tokenId; const s : storage) : auctionId is
   case s.auctionByToken[tokenId] of
   | Some(v) -> v
-  | None -> (failwith("No active auctions for this token") : auctionId)
+  | None -> 0n
   end;
 
 function getAuctionByTokenId(const tokenId : tokenId; const s : storage) : auction_params is
@@ -116,9 +116,10 @@ function submitForAuction(const params : submit_token_params; var s : storage) :
     var tokensByUser := getTokensByUser(Tezos.sender, s);
 
     s.lastAuctionId := s.lastAuctionId + 1n;
-    auctionsByUser := s.lastAuctionId # auctionsByUser;
-    tokensByUser := params.tokenId # tokensByUser;
+    auctionsByUser := Set.add(s.lastAuctionId, auctionsByUser);
+    tokensByUser := Set.add(params.tokenId, tokensByUser);
     s.auctions[s.lastAuctionId] := auction;
+    s.auctionByToken[params.tokenId] := s.lastAuctionId;
     s.auctionsByUser[Tezos.sender] := auctionsByUser;
     s.tokensByUser[Tezos.sender] := tokensByUser;
   } with (operations, s)
@@ -145,11 +146,10 @@ function makeBid(const bidParams : make_bid_params; var s : storage) : return is
     } else
       skip;
 
-    auction.lastBid.user := Tezos.sender;
-    auction.lastBid.bid := Tezos.amount;
-
     const auctionId = getAuctionIdByTokenId(bidParams.tokenId, s);
 
+    auction.lastBid.user := Tezos.sender;
+    auction.lastBid.bid := Tezos.amount;
     s.auctions[auctionId] := auction;
   } with (operations, s)
 
@@ -173,17 +173,50 @@ function claimToken(const tokenId : tokenId; var s : storage) : return is
           failwith("Allowed only for last betman");
       };
       const auctionId = getAuctionIdByTokenId(tokenId, s);
+      var auctionsByUser := getAuctionsByUser(auction.creator, s);
+      var tokensByUser := getTokensByUser(auction.creator, s);
 
+      auctionsByUser := Set.remove(auctionId, auctionsByUser);
+      tokensByUser := Set.remove(tokenId, tokensByUser);
       auction.finished := True;
       s.auctions[auctionId] := auction;
+      s.auctionByToken[tokenId] := 0n;
+      s.auctionsByUser[auction.creator] := auctionsByUser;
+      s.tokensByUser[auction.creator] := tokensByUser;
     }
   } with (operations, s)
 
 function claimCoins(const tokenId : tokenId; var s : storage) : return is
   block {
     const auction : auction_params = getAuctionByTokenId(tokenId, s);
+    var operations : list(operation) := noOperations;
 
-  } with (noOperations, s)
+    if auction.createdAt + int(auction.tokenParams.lifetime) > Tezos.now then
+      failwith("Auction is not finished yet")
+    else block {
+      if Tezos.sender =/= auction.lastBid.user then
+        failwith("Allowed only for last betman")
+      else block {
+        const receiver : contract(unit) = case(Tezos.get_contract_opt(auction.creator) : option(contract(unit))) of
+        | Some(contract) -> contract
+        | None -> (failwith("Invalid contract") : contract(unit))
+        end;
+
+        operations := Tezos.transaction(unit, auction.lastBid.bid, receiver) # operations;
+      };
+      const auctionId = getAuctionIdByTokenId(tokenId, s);
+      var auctionsByUser := getAuctionsByUser(auction.creator, s);
+      var tokensByUser := getTokensByUser(auction.creator, s);
+
+      auctionsByUser := Set.remove(auctionId, auctionsByUser);
+      tokensByUser := Set.remove(tokenId, tokensByUser);
+      auction.finished := True;
+      s.auctions[auctionId] := auction;
+      s.auctionByToken[tokenId] := 0n;
+      s.auctionsByUser[auction.creator] := auctionsByUser;
+      s.tokensByUser[auction.creator] := tokensByUser;
+    }
+  } with (operations, s)
 
 function setAdmin(const admin : address; var s : storage) : return is
   block {
