@@ -1,12 +1,6 @@
 const zeroAddress : address = ("tz1ZZZZZZZZZZZZZZZZZZZZZZZZZZZZNkiRg" : address);
 
-type tokenParams is [@layout:comb] record [
-  tokenId       : nat;
-  price         : tez;
-  owner         : address;
-]
-
-type userMap is map (address, set(tokenParams));
+type userMap is big_map (address, map(nat, tez));
 
 type storage is [@layout:comb] record [
   tokenFa2      : address;
@@ -18,6 +12,11 @@ type storage is [@layout:comb] record [
 type ownerTokenParams is [@layout:comb] record [
   ownerAddress  : address;
   tokenId       : nat;
+]
+
+type changePriceParams is [@layout:comb] record [
+  tokenId       : nat;
+  price         : tez;
 ]
 
 type transfer_destination is [@layout:comb] record [
@@ -39,7 +38,7 @@ type return is list (operation) * storage
 
 type entryAction is 
   | SetMarketAdmin of address
-  | ExhibitToken of tokenParams
+  | ExhibitToken of changePriceParams
   | Buy of ownerTokenParams
   | Delete of nat
-  | ChangePrice of tokenParams
+  | ChangePrice of nat
