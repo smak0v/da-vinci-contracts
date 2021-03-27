@@ -6,7 +6,6 @@ type storage is [@layout:comb] record [
   tokenFa2      : address;
   admin         : address;
   userData      : userMap;
-  tokenCounter  : nat;
 ]
 
 type ownerTokenParams is [@layout:comb] record [
