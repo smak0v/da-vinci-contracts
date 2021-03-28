@@ -18,7 +18,11 @@ module.exports = async (deployer, _network, accounts) => {
   const storage = {
     tokenFa2: "KT1PD7P87iCMLLQEsubaoENoT71FgE4XeJeg",
     admin: oleh.pkh,
-    userData: new MichelsonMap(),
+    tokensByUser: new MichelsonMap(),
+    marketsByToken: new MichelsonMap(),
+    markets: new MichelsonMap(),
+    marketsByUser: new MichelsonMap(),
+    lastTokenId: "0"
   };
 
   await deployer.deploy(Market, storage);
