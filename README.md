@@ -86,9 +86,14 @@ yarn migrate
 
 Addresses of deployed contracts are displayed in terminal
 
-# Entrypoints
+# Contract links :
+1. [Auction](https://better-call.dev/edo2net/KT1L73Nh5KquNpFJHzMz2v4QrpVtLFXrgEGa/operations)
+2. [Market](https://better-call.dev/edo2net/KT1NLVYVFQfbtCD4t8hFy4MJv6yMgagUHE1H/operations)
+3. [FA2](https://better-call.dev/edo2net/KT1Ni1cYKkUEXxPUVDCiV6SinnozHhJM6wSP/operations)
 
-The Ligo interfaces of the contracts can be found in `contracts/partials/I__CONTRACT_NAME__.ligo`
+# GitHubs of participants :
+1. [Sergey Makov - Smart Contract Dev](https://github.com/smak0v)
+2. [Oleh Rubanik - Smart Contract Dev](https://github.com/rubanik00)
+3. [Oleh Khalin - Front-End Dev](https://github.com/olehkhalin)
 
-## Auction
-
+# [Front-end](https://da-vinci-marketplace-ui.vercel.app/)
