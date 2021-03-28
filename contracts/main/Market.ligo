@@ -52,6 +52,7 @@ function exhibitToken (const tokenId : nat; const price : tez; var s : storage) 
       owner = Tezos.sender;
       tokenId = tokenId;
       price = price;
+      status = 0n;
     ];
 
     var marketsByUser := getMarketsByUser(Tezos.sender, s);
@@ -88,9 +89,17 @@ function buy (const tokenId : nat; var s : storage) : return is
       failwith("marketTokenId is zero")
     else skip;
 
+    var itemData : itemParams := record [
+      owner = zeroAddress;
+      tokenId = tokenId;
+      price = 0tez;
+      status = 1n;
+    ];
+
     var market := getMarket(marketTokenId, s);
-    
-    remove marketTokenId from map s.markets;
+
+    s.markets[marketTokenId] := itemData;
+
     remove tokenId from map s.marketsByToken;
     s.marketsByUser[Tezos.sender] := Set.remove(marketTokenId, getMarketsByUser(Tezos.sender, s));
 
@@ -138,9 +147,17 @@ function delete (const tokenId : nat; var s : storage) : return is
       failwith("marketTokenId is zero")
     else skip;
 
+    var itemData : itemParams := record [
+      owner = zeroAddress;
+      tokenId = tokenId;
+      price = 0tez;
+      status = 2n;
+    ];
+
     var market := getMarket(marketTokenId, s);
-    
-    remove marketTokenId from map s.markets;
+
+    s.markets[marketTokenId] := itemData;
+
     remove tokenId from map s.marketsByToken;
     s.marketsByUser[Tezos.sender] := Set.remove(marketTokenId, getMarketsByUser(Tezos.sender, s));
 
@@ -164,18 +181,19 @@ function delete (const tokenId : nat; var s : storage) : return is
 function changePrice (const tokenId : nat; const price : tez; var s : storage) : return is
   block {
     var marketTokenId : nat := checkToken(tokenId, s);
-    
+
     if marketTokenId = 0n then
       failwith("marketTokenId is zero")
     else skip;
 
     var market := getMarket(marketTokenId, s);
-    
+
     if (market.owner = Tezos.sender) and (market.price > 0tez) then
       s.markets[marketTokenId] := record [
         owner = Tezos.sender;
         tokenId = tokenId;
         price = price;
+        status = 0n;
       ];
     else skip;
   } with (noOperations, s)

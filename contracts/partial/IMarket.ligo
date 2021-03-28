@@ -4,6 +4,7 @@ type itemParams is [@layout:comb] record [
   owner           : address;
   tokenId         : nat;
   price           : tez;
+  status          : nat; // 0 - market, 1 - sold, 2 - del
 ]
 
 type storage is [@layout:comb] record [
