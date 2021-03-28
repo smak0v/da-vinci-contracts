@@ -16,7 +16,7 @@ module.exports = async (deployer, _network, accounts) => {
   });
 
   const storage = {
-    tokenFa2: "KT1Wa7xVQHGVqMCfoRHqG7UCTxwgEpXQ2qci",
+    tokenFa2: "KT1PD7P87iCMLLQEsubaoENoT71FgE4XeJeg",
     admin: oleh.pkh,
     userData: new MichelsonMap(),
   };
