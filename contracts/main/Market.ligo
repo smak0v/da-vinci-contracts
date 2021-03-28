@@ -1,15 +1,31 @@
 #include "../partial/IMarket.ligo"
 
-[@inline] function getMap (const tokenAddress : address; const s : storage) : map(nat, tez) is
-  case s.userData[tokenAddress] of
-    Some (v) -> v
-    | None -> (map [] : map(nat, tez))
+[@inline] function getMarketsByUser(const user : address; const s : storage) : set(nat) is
+  block {
+    const marketsByUser : set(nat) = case s.marketsByUser[user] of
+    | Some(v) -> v
+    | None -> (set [] : set(nat))
+    end;
+  } with marketsByUser
+
+[@inline] function getTokensByUser(const user : address; const s : storage) : set(nat) is
+  block {
+    const tokensByUser : set(nat) = case s.tokensByUser[user] of
+    | Some(v) -> v
+    | None -> (set [] : set(nat))
+    end;
+  } with tokensByUser
+
+[@inline] function checkToken (const tokenId : nat; const s : storage) : nat is
+  case s.marketsByToken[tokenId] of
+    | Some(v) -> v
+    | None -> 0n
   end;
 
-[@inline] function getPrice (const tokenId : nat; const tokenData : map(nat, tez)) : tez is
-  case tokenData[tokenId] of
-    Some (v) -> v
-    | None -> 0tez
+[@inline] function getMarket (const marketTokenId : nat; const s : storage) : itemParams is
+  case s.markets[marketTokenId] of
+    | Some(v) -> v
+    | None -> (failwith("No active market for this token"): itemParams)
   end;
 
 [@inline] function getTokenTransferEntrypoint (const tokenAddress : address) : contract(transferType) is
@@ -32,7 +48,22 @@ function exhibitToken (const tokenId : nat; const price : tez; var s : storage) 
       failwith("exhibitPrice is zero")
     else skip;
 
-    s.userData[Tezos.sender] := Map.add(tokenId, price, getMap(Tezos.sender,s));
+    var itemData : itemParams := record [
+      owner = Tezos.sender;
+      tokenId = tokenId;
+      price = price;
+    ];
+
+    var marketsByUser := getMarketsByUser(Tezos.sender, s);
+    var tokensByUser := getTokensByUser(Tezos.sender, s);
+
+    s.lastTokenId := s.lastTokenId + 1n;
+    marketsByUser := Set.add(s.lastTokenId, marketsByUser);
+    tokensByUser := Set.add(tokenId, tokensByUser);
+    s.markets[s.lastTokenId] := itemData;
+    s.marketsByToken[tokenId] := s.lastTokenId;
+    s.marketsByUser[Tezos.sender] := marketsByUser;
+    s.tokensByUser[Tezos.sender] := tokensByUser;
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.self_address;
@@ -50,15 +81,22 @@ function exhibitToken (const tokenId : nat; const price : tez; var s : storage) 
     )];
   } with (operations, s)
 
-function buy (const ownerAddress : address; const tokenId : nat; var s : storage) : return is
+function buy (const tokenId : nat; var s : storage) : return is
   block {
-    var userMaps : map(nat, tez) := getMap(ownerAddress, s);
-    var userPrice : tez := getPrice(tokenId, userMaps);
-    s.userData[ownerAddress] := Map.remove(tokenId, getMap(ownerAddress,s) );
+    var marketTokenId : nat := checkToken(tokenId, s);
+    if marketTokenId = 0n then
+      failwith("marketTokenId is zero")
+    else skip;
+
+    var market := getMarket(marketTokenId, s);
+    
+    remove marketTokenId from map s.markets;
+    remove tokenId from map s.marketsByToken;
+    s.marketsByUser[Tezos.sender] := Set.remove(marketTokenId, getMarketsByUser(Tezos.sender, s));
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.sender;
-      token_id = tokenId;
+      token_id = market.tokenId;
       amount = 1n;
     ];
     const transferParam : transfer_param = record [
@@ -66,15 +104,15 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
       txs = list [transferDestination];
     ];
 
-    if userPrice = 0tez then
+    if market.price = 0tez then
       failwith("Price is zero")
     else skip;
 
-    if Tezos.amount =/= userPrice then
+    if Tezos.amount =/= market.price then
       failwith("Not enough XTZ")
     else skip;
 
-    const receiver : contract(unit) = case (Tezos.get_contract_opt(ownerAddress) : option(contract(unit))) of
+    const receiver : contract(unit) = case (Tezos.get_contract_opt(market.owner) : option(contract(unit))) of
       | Some(contract) -> contract
       | None -> (failwith("Invalid contract") : contract(unit))
       end;
@@ -82,7 +120,7 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
     const operations : list(operation) = list[
       Tezos.transaction(
         unit,
-        userPrice,
+        market.price,
         receiver
       );
       Tezos.transaction(
@@ -95,7 +133,16 @@ function buy (const ownerAddress : address; const tokenId : nat; var s : storage
 
 function delete (const tokenId : nat; var s : storage) : return is
   block {
-    s.userData[Tezos.sender] := Map.remove(tokenId, getMap(Tezos.sender,s));
+    var marketTokenId : nat := checkToken(tokenId, s);
+    if marketTokenId = 0n then
+      failwith("marketTokenId is zero")
+    else skip;
+
+    var market := getMarket(marketTokenId, s);
+    
+    remove marketTokenId from map s.markets;
+    remove tokenId from map s.marketsByToken;
+    s.marketsByUser[Tezos.sender] := Set.remove(marketTokenId, getMarketsByUser(Tezos.sender, s));
 
     const transferDestination : transfer_destination = record [
       to_ = Tezos.sender;
@@ -116,20 +163,28 @@ function delete (const tokenId : nat; var s : storage) : return is
 
 function changePrice (const tokenId : nat; const price : tez; var s : storage) : return is
   block {
-    var userMaps : map(nat, tez) := getMap(Tezos.sender, s);
-    var userPrice : tez := getPrice(tokenId, userMaps);
-
-    if userPrice > 0tez then
-      s.userData[Tezos.sender] := Map.update(tokenId, Some(price), getMap(Tezos.sender, s));
+    var marketTokenId : nat := checkToken(tokenId, s);
+    
+    if marketTokenId = 0n then
+      failwith("marketTokenId is zero")
     else skip;
 
+    var market := getMarket(marketTokenId, s);
+    
+    if (market.owner = Tezos.sender) and (market.price > 0tez) then
+      s.markets[marketTokenId] := record [
+        owner = Tezos.sender;
+        tokenId = tokenId;
+        price = price;
+      ];
+    else skip;
   } with (noOperations, s)
 
 function main (const action : entryAction; var s : storage) : return is
   case action of
   | SetMarketAdmin(params) -> setMarketAdmin(params, s)
   | ExhibitToken(params) -> exhibitToken(params.tokenId, params.price, s)
-  | Buy(params) -> buy(params.ownerAddress, params.tokenId, s)
+  | Buy(params) -> buy(params, s)
   | Delete(params) -> delete(params, s)
   | ChangePrice(params) -> changePrice(params.tokenId, params.price, s)
   end;
