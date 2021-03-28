@@ -25,6 +25,8 @@ module.exports = async (deployer, _network, accounts) => {
     lastAuctionId: "0",
     minAuctionLifetime: "3600", // 1 hour
     maxExtensionTime: "21600", // 6 hours
+    fee: "500000",
+    totalFee: "0",
   };
 
   await deployer.deploy(Auction, storage);

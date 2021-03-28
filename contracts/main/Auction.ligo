@@ -103,6 +103,11 @@ function submitForAuction(const params : submit_token_params; var s : storage) :
   block {
     validateSubmition(params, s);
 
+    if Tezos.amount =/= s.fee then
+      failwith("Not enough fee")
+    else
+      s.totalFee := s.totalFee + s.fee;
+
     const operations : list(operation) = list [getTokenTransferOperation(
       s.token,
       params.tokenId,
@@ -174,9 +179,14 @@ function claimToken(const tokenId : tokenId; var s : storage) : return is
         else
           failwith("Allowed only for creator");
       } else block {
-        if Tezos.sender = auction.lastBid.user then
+        if Tezos.sender = auction.lastBid.user then block {
+          if Tezos.amount =/= s.fee then
+            failwith("Not enough fee")
+          else
+            s.totalFee := s.totalFee + s.fee;
+
           operations := getTokenTransferOperation(s.token, tokenId, Tezos.self_address, auction.lastBid.user) # operations
-        else
+        } else
           failwith("Allowed only for last betman");
       };
       const auctionId = getAuctionIdByTokenId(tokenId, s);
@@ -255,6 +265,29 @@ function setMaxExtensionTime(const newMaxExtensionTime : nat; var s : storage) :
     s.maxExtensionTime := newMaxExtensionTime;
   } with (noOperations, s)
 
+function setFee(const newFee : tez; var s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("Not admin");
+    else
+      skip;
+
+    s.fee := newFee;
+  } with (noOperations, s)
+
+function withdrawFee(const recipient : address; const s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("Not admin");
+    else
+      s.totalFee := 0tez;
+
+    const receiver : contract(unit) = case(Tezos.get_contract_opt(recipient) : option(contract(unit))) of
+    | Some(contract) -> contract
+    | None -> (failwith("Invalid contract") : contract(unit))
+    end;
+  } with (list [Tezos.transaction(unit, s.totalFee, receiver)], s)
+
 function main(const action : actions; const s : storage) : return is
   case action of
   | SubmitForAuction(v) -> submitForAuction(v, s)
@@ -264,4 +297,6 @@ function main(const action : actions; const s : storage) : return is
   | SetAdmin(v) -> setAdmin(v, s)
   | SetMinAuctionLifetime(v) -> setMinAuctionLifetime(v, s)
   | SetMaxExtensionTime(v) -> setMaxExtensionTime(v, s)
+  | SetFee(v) -> setFee(v, s)
+  | WithdrawFee(v) -> withdrawFee(v, s)
   end

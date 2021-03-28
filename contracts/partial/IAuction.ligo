@@ -38,6 +38,8 @@ type storage is [@layout:comb] record [
   lastAuctionId           : nat;
   minAuctionLifetime      : nat;
   maxExtensionTime        : nat;
+  fee                     : tez;
+  totalFee                : tez;
 ]
 
 type return is list(operation) * storage
@@ -50,6 +52,8 @@ type actions is
 | SetAdmin of address
 | SetMinAuctionLifetime of nat
 | SetMaxExtensionTime of nat
+| SetFee of tez
+| WithdrawFee of address
 
 [@inline] const noOperations : list(operation) = nil;
 
