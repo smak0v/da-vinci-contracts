@@ -89,14 +89,14 @@ function buy (const tokenId : nat; var s : storage) : return is
       failwith("marketTokenId is zero")
     else skip;
 
+    var market := getMarket(marketTokenId, s);
+
     var itemData : itemParams := record [
       owner = zeroAddress;
       tokenId = tokenId;
-      price = 0tez;
+      price = market.price;
       status = 1n;
     ];
-
-    var market := getMarket(marketTokenId, s);
 
     s.markets[marketTokenId] := itemData;
 
