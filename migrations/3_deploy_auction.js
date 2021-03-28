@@ -21,13 +21,19 @@ module.exports = async (deployer, _network, accounts) => {
     auctionsByUser: new MichelsonMap(),
     tokensByUser: new MichelsonMap(),
     admin: oleh.pkh,
-    token: "KT1PD7P87iCMLLQEsubaoENoT71FgE4XeJeg",
+    token: "KT1J5B9AKkHJoVPB2W88uys9hWn7H5nzsVog",
     lastAuctionId: "0",
     minAuctionLifetime: "3600", // 1 hour
     maxExtensionTime: "21600", // 6 hours
     fee: "500000",
     totalFee: "0",
   };
+  const operation = await tezos.contract.originate({
+    code: JSON.parse(Auction.michelson),
+    storage: storage,
+  });
 
-  await deployer.deploy(Auction, storage);
+  await operation.confirmation();
+
+  console.log(operation.contractAddress);
 };

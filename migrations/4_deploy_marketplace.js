@@ -16,7 +16,7 @@ module.exports = async (deployer, _network, accounts) => {
   });
 
   const storage = {
-    tokenFa2: "KT1PD7P87iCMLLQEsubaoENoT71FgE4XeJeg",
+    tokenFa2: "KT1J5B9AKkHJoVPB2W88uys9hWn7H5nzsVog",
     admin: oleh.pkh,
     tokensByUser: new MichelsonMap(),
     marketsByToken: new MichelsonMap(),
@@ -25,6 +25,12 @@ module.exports = async (deployer, _network, accounts) => {
     lastTokenId: "0",
     fee: "500000"
   };
+  const operation = await tezos.contract.originate({
+    code: JSON.parse(Market.michelson),
+    storage: storage,
+  });
 
-  await deployer.deploy(Market, storage);
+  await operation.confirmation();
+
+  console.log(operation.contractAddress);
 };

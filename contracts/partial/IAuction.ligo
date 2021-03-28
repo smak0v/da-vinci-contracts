@@ -2,7 +2,7 @@
 type tokenId is nat
 type auctionId is nat
 
-type submit_token_params is [@layout:comb] record [
+type submit_token_params is record [
   tokenId                 : tokenId;
   initialPrice            : tez;
   minBidStep              : tez;
@@ -10,17 +10,17 @@ type submit_token_params is [@layout:comb] record [
   extensionTime           : nat;
 ]
 
-type make_bid_params is [@layout:comb] record [
+type make_bid_params is record [
   tokenId                 : tokenId;
   bid                     : tez;
 ]
 
-type bid_params is [@layout:comb] record [
+type bid_params is record [
   user                    : address;
   bid                     : tez;
 ]
 
-type auction_params is [@layout:comb] record [
+type auction_params is record [
   creator                 : address;
   tokenParams             : submit_token_params;
   lastBid                 : bid_params;
@@ -28,7 +28,7 @@ type auction_params is [@layout:comb] record [
   finished                : bool;
 ]
 
-type storage is [@layout:comb] record [
+type storage is record [
   auctions                : big_map(auctionId, auction_params);
   auctionByToken          : big_map(tokenId, auctionId);
   auctionsByUser          : big_map(address, set(auctionId));
