@@ -42,10 +42,34 @@ function setMarketAdmin (const newAdmin : address; var s : storage) : return is
   s.admin := newAdmin;
   } with (noOperations, s)
 
+function setNewFee (const newFee : tez; var s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("NotAdmin")
+    else skip;
+    s.fee := newFee;
+  } with (noOperations, s)
+
+function withdraw (const withdrawAddress : address; var s : storage) : return is
+  block {
+    if Tezos.sender =/= s.admin then
+      failwith("Not admin");
+    else skip;
+
+    const receiver : contract(unit) = case(Tezos.get_contract_opt(withdrawAddress) : option(contract(unit))) of
+    | Some(contract) -> contract
+    | None -> (failwith("Invalid contract") : contract(unit))
+    end;
+  } with (list [Tezos.transaction(unit, s.fee, receiver)], s)
+
 function exhibitToken (const tokenId : nat; const price : tez; var s : storage) : return is
   block {
     if price = 0tez then
       failwith("exhibitPrice is zero")
+    else skip;
+
+    if Tezos.amount =/= s.fee then
+      failwith("fee not included")
     else skip;
 
     var itemData : itemParams := record [
@@ -117,7 +141,7 @@ function buy (const tokenId : nat; var s : storage) : return is
       failwith("Price is zero")
     else skip;
 
-    if Tezos.amount =/= market.price then
+    if Tezos.amount =/= market.price + s.fee then
       failwith("Not enough XTZ")
     else skip;
 
@@ -201,6 +225,8 @@ function changePrice (const tokenId : nat; const price : tez; var s : storage) :
 function main (const action : entryAction; var s : storage) : return is
   case action of
   | SetMarketAdmin(params) -> setMarketAdmin(params, s)
+  | SetNewFee(params) -> setNewFee(params, s)
+  | Withdraw(params) -> withdraw(params,s)
   | ExhibitToken(params) -> exhibitToken(params.tokenId, params.price, s)
   | Buy(params) -> buy(params, s)
   | Delete(params) -> delete(params, s)

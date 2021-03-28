@@ -15,6 +15,7 @@ type storage is [@layout:comb] record [
   markets         : big_map(nat, itemParams); // (marketId, itemParams)
   marketsByUser   : big_map(address, set(nat)); // users items in market
   lastTokenId     : nat;
+  fee             : tez;
 ]
 
 type changePriceParams is [@layout:comb] record [
@@ -41,6 +42,8 @@ type return is list (operation) * storage
 
 type entryAction is
   | SetMarketAdmin of address
+  | SetNewFee of tez
+  | Withdraw of address
   | ExhibitToken of changePriceParams
   | Buy of nat
   | Delete of nat

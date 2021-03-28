@@ -22,7 +22,8 @@ module.exports = async (deployer, _network, accounts) => {
     marketsByToken: new MichelsonMap(),
     markets: new MichelsonMap(),
     marketsByUser: new MichelsonMap(),
-    lastTokenId: "0"
+    lastTokenId: "0",
+    fee: "500000"
   };
 
   await deployer.deploy(Market, storage);
