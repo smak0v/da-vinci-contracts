@@ -60,7 +60,7 @@ function withdraw (const withdrawAddress : address; var s : storage) : return is
     | Some(contract) -> contract
     | None -> (failwith("Invalid contract") : contract(unit))
     end;
-  } with (list [Tezos.transaction(unit, s.fee, receiver)], s)
+  } with (list [Tezos.transaction(unit, Tezos.balance, receiver)], s)
 
 function exhibitToken (const tokenId : nat; const price : tez; var s : storage) : return is
   block {
