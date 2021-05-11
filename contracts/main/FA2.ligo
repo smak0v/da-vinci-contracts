@@ -15,7 +15,7 @@ function get_account(const addr : address; const s : storage) : account is
 
 function iterate_transfer(const s : storage; const user_trx_params : transfer_param) : storage is
   block {
-    const sender_account : account = get_account(user_trx_params.from_, s);
+    var sender_account : account := get_account(user_trx_params.from_, s);
 
     if user_trx_params.from_ = Tezos.sender or sender_account.allowances contains Tezos.sender then
       skip
@@ -24,6 +24,8 @@ function iterate_transfer(const s : storage; const user_trx_params : transfer_pa
 
     function make_transfer(const s : storage; const transfer : transfer_destination) : storage is
       block {
+        sender_account := get_account(user_trx_params.from_, s);
+
         const senderBalance : nat = case sender_account.balance[transfer.token_id] of
         | Some(v) -> v
         | None -> 0n
